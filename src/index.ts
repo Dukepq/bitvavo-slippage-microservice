@@ -4,9 +4,11 @@ import envVar from "./utils/envHelper";
 import orderBookRouter from "./routers/orderBook";
 import tradesRouter from "./routers/trades";
 import indicatorsRouter from "./routers/indicators";
+import authMiddleware from "./middleware/authMiddleware";
 
 const app = express();
 app.use(limiter);
+app.use(authMiddleware);
 
 app.use("/orderBook", orderBookRouter);
 app.use("/trades", tradesRouter);
