@@ -1,6 +1,6 @@
 import { OrderBook } from "../dataFetching/fetchBitvavoData";
 
-export function robs(recentVolume: number, cumulativeDepth: number): number {
+export function robs(cumulativeDepth: number, recentVolume: number): number {
   return cumulativeDepth / recentVolume;
 }
 

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import orderBooks from "../dataProcessing/orderBook";
 import { orderBookAskBrackets, orderBookBidBrackets } from "../lib/ROBS";
+import { spread } from "../lib/spread";
 
 const getOrderBookSchema = z.object({
   params: z.object({
@@ -33,9 +34,16 @@ export function getOrderBook(req: Request, res: Response) {
     const formattedBookBids = orderBookBidBrackets(book.bids, brackets, size);
     const formattedBookAsks = orderBookAskBrackets(book.asks, brackets, size);
 
+    const bestBid = Number(book.bids[0][0]);
+    const bestAsk = Number(book.asks[0][0]);
+    const bidAskSpread = spread(bestBid, bestAsk);
+
     return res.status(200).json({
       market,
       size,
+      bestBid,
+      bestAsk,
+      spread: bidAskSpread,
       bids: formattedBookBids,
       asks: formattedBookAsks,
     });
