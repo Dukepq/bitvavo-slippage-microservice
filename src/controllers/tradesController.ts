@@ -21,22 +21,27 @@ export function getTrades(req: Request, res: Response) {
       message: "provide correct params, format: XXX-YYY",
     });
   }
-  const market = result.data.params.market;
-  const maxAge = result.data.query?.maxAge;
-  const now = Date.now();
-  let marketTrades = trades[market];
+  try {
+    const market = result.data.params.market;
+    const maxAge = result.data.query?.maxAge;
+    const now = Date.now();
+    let marketTrades = trades[market];
 
-  if (!marketTrades) {
-    return res
-      .status(404)
-      .json({ success: false, message: "resource not found" });
+    if (!marketTrades) {
+      return res
+        .status(404)
+        .json({ success: false, message: "resource not found" });
+    }
+
+    if (typeof maxAge === "number") {
+      marketTrades = marketTrades.filter(
+        (trade) => trade.timestamp > now - maxAge
+      );
+    }
+
+    return res.status(200).json({ marketTrades });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false });
   }
-
-  if (typeof maxAge === "number") {
-    marketTrades = marketTrades.filter(
-      (trade) => trade.timestamp > now - maxAge
-    );
-  }
-
-  return res.status(200).json({ marketTrades });
 }
