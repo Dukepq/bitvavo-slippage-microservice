@@ -84,10 +84,12 @@ const complexRobsSchema = z.object({
   query: z.object({
     brackets: z.coerce.number(),
     bracketSize: z.coerce.number(),
-    maxAge: z.coerce
-      .number()
-      .lte(1000 * 60 * 5)
-      .nonnegative(),
+    maxAge: z.optional(
+      z.coerce
+        .number()
+        .lte(1000 * 60 * 5)
+        .nonnegative()
+    ),
   }),
 });
 
@@ -127,7 +129,7 @@ export function getComplexRobs(req: Request, res: Response) {
 
       const { sellVolume, buyVolume } = getTradesVolume(
         marketTrades,
-        1000 * 60
+        maxAge || 1000 * 60
       );
 
       let robsBArray: (number | null)[] | null = [];
