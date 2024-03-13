@@ -17,6 +17,12 @@ import { getTradesVolume } from "../lib/trades";
 const SimpleRobsSchema = z.object({
   query: z.object({
     depth: z.coerce.number(),
+    maxAge: z.optional(
+      z.coerce
+        .number()
+        .lte(1000 * 60 * 5)
+        .nonnegative()
+    ),
   }),
 });
 
@@ -28,6 +34,7 @@ export function getSimpleRobs(req: Request, res: Response) {
       .json({ success: false, message: "provide correct query params" });
   }
   const depth = result.data.query.depth;
+  const maxAge = result.data.query.maxAge;
 
   try {
     const allRobs: {
@@ -56,7 +63,7 @@ export function getSimpleRobs(req: Request, res: Response) {
 
       const { sellVolume, buyVolume } = getTradesVolume(
         marketTrades,
-        1000 * 60
+        maxAge || 1000 * 60
       );
 
       const robsA = sellVolume && askDepth ? robs(askDepth, sellVolume) : null;
@@ -77,7 +84,10 @@ const complexRobsSchema = z.object({
   query: z.object({
     brackets: z.coerce.number(),
     bracketSize: z.coerce.number(),
-    maxAge: z.coerce.number(),
+    maxAge: z.coerce
+      .number()
+      .lte(1000 * 60 * 5)
+      .nonnegative(),
   }),
 });
 
@@ -93,8 +103,8 @@ export function getComplexRobs(req: Request, res: Response) {
   try {
     const allRobs: {
       [key: string]: {
-        robsB: (number | null)[];
-        robsA: (number | null)[];
+        robsB: (number | null)[] | null;
+        robsA: (number | null)[] | null;
         spread: number;
       };
     } = {};
@@ -120,15 +130,19 @@ export function getComplexRobs(req: Request, res: Response) {
         1000 * 60
       );
 
-      const robsBArray: (number | null)[] = [];
+      let robsBArray: (number | null)[] | null = [];
       for (const bidBracket of bidDepthArray) {
-        if (buyVolume === 0) robsBArray.push(null);
-        else robsBArray.push(bidBracket / buyVolume);
+        if (buyVolume === 0) {
+          robsBArray = null;
+          break;
+        } else robsBArray.push(bidBracket / buyVolume);
       }
-      const robsAArray: (number | null)[] = [];
+      let robsAArray: (number | null)[] | null = [];
       for (const askBracket of askDepthArray) {
-        if (sellVolume === 0) robsAArray.push(null);
-        else robsBArray.push(askBracket / sellVolume);
+        if (sellVolume === 0) {
+          robsAArray = null;
+          break;
+        } else robsAArray.push(askBracket / sellVolume);
       }
 
       allRobs[market] = {
