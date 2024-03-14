@@ -75,10 +75,10 @@ export function getSimpleRobs(req: Request, res: Response) {
 
       if (!robsA && !robsB) continue;
       if (maxRobsA) {
-        if (robsA && robsA > maxRobsA) continue;
+        if (!robsA || robsA > maxRobsA) continue;
       }
       if (maxRobsB) {
-        if (robsB && robsB > maxRobsB) continue;
+        if (!robsB || robsB > maxRobsB) continue;
       }
 
       allRobs[market] = { robsA, robsB, spread: bidAskSpread };
