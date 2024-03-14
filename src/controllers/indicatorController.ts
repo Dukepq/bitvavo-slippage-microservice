@@ -23,7 +23,8 @@ const SimpleRobsSchema = z.object({
         .lte(1000 * 60 * 5)
         .nonnegative()
     ),
-    minRobs: z.optional(z.coerce.number().nonnegative()),
+    minRobsB: z.optional(z.coerce.number().nonnegative()),
+    minRobsA: z.optional(z.coerce.number().nonnegative()),
   }),
 });
 
@@ -36,7 +37,8 @@ export function getSimpleRobs(req: Request, res: Response) {
   }
   const depth = result.data.query.depth;
   const maxAge = result.data.query.maxAge;
-  const minRobs = result.data.query.minRobs;
+  const minRobsA = result.data.query.minRobsA;
+  const minRobsB = result.data.query.minRobsB;
 
   try {
     const allRobs: {
@@ -70,6 +72,14 @@ export function getSimpleRobs(req: Request, res: Response) {
 
       const robsA = buyVolume && askDepth ? robs(askDepth, buyVolume) : null;
       const robsB = sellVolume && bidDepth ? robs(bidDepth, sellVolume) : null;
+
+      if (!robsA && !robsB) continue;
+      if (minRobsA) {
+        if (robsA && robsA > minRobsA) continue;
+      }
+      if (minRobsB) {
+        if (robsB && robsB > minRobsB) continue;
+      }
 
       allRobs[market] = { robsA, robsB, spread: bidAskSpread };
     }
