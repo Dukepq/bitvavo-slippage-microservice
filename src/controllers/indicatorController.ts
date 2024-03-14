@@ -66,8 +66,8 @@ export function getSimpleRobs(req: Request, res: Response) {
         maxAge || 1000 * 60
       );
 
-      const robsA = sellVolume && askDepth ? robs(askDepth, sellVolume) : null;
-      const robsB = buyVolume && bidDepth ? robs(bidDepth, buyVolume) : null;
+      const robsA = buyVolume && askDepth ? robs(askDepth, buyVolume) : null;
+      const robsB = sellVolume && bidDepth ? robs(bidDepth, sellVolume) : null;
 
       allRobs[market] = { robsA, robsB, spread: bidAskSpread };
     }

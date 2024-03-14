@@ -215,7 +215,7 @@ class BitvavoWS {
   public async subscribeBookMany(markets: string[]) {
     for (const market of markets) {
       this.subscribeBook(market);
-      await wait(200);
+      await wait(100);
     }
   }
 
