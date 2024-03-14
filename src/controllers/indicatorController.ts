@@ -23,6 +23,7 @@ const SimpleRobsSchema = z.object({
         .lte(1000 * 60 * 5)
         .nonnegative()
     ),
+    minRobs: z.optional(z.coerce.number().nonnegative()),
   }),
 });
 
@@ -35,6 +36,7 @@ export function getSimpleRobs(req: Request, res: Response) {
   }
   const depth = result.data.query.depth;
   const maxAge = result.data.query.maxAge;
+  const minRobs = result.data.query.minRobs;
 
   try {
     const allRobs: {
@@ -134,17 +136,17 @@ export function getComplexRobs(req: Request, res: Response) {
 
       let robsBArray: (number | null)[] | null = [];
       for (const bidBracket of bidDepthArray) {
-        if (buyVolume === 0) {
+        if (sellVolume === 0) {
           robsBArray = null;
           break;
-        } else robsBArray.push(bidBracket / buyVolume);
+        } else robsBArray.push(bidBracket / sellVolume);
       }
       let robsAArray: (number | null)[] | null = [];
       for (const askBracket of askDepthArray) {
-        if (sellVolume === 0) {
+        if (buyVolume === 0) {
           robsAArray = null;
           break;
-        } else robsAArray.push(askBracket / sellVolume);
+        } else robsAArray.push(askBracket / buyVolume);
       }
 
       allRobs[market] = {
