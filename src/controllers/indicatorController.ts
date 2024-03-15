@@ -45,6 +45,8 @@ export function getSimpleRobs(req: Request, res: Response) {
       [key: string]: {
         robsB: number | null;
         robsA: number | null;
+        buyVolume: number;
+        sellVolume: number;
         spread: number;
       };
     } = {};
@@ -81,7 +83,13 @@ export function getSimpleRobs(req: Request, res: Response) {
         if (!robsB || robsB > maxRobsB) continue;
       }
 
-      allRobs[market] = { robsA, robsB, spread: bidAskSpread };
+      allRobs[market] = {
+        robsA,
+        robsB,
+        spread: bidAskSpread,
+        buyVolume,
+        sellVolume,
+      };
     }
     return res.status(200).json(allRobs);
   } catch (err) {
