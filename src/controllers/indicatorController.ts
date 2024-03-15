@@ -101,6 +101,11 @@ export function getSimpleRobs(req: Request, res: Response) {
 }
 
 const complexRobsSchema = z.object({
+  params: z.optional(
+    z.object({
+      market: z.optional(z.string().regex(/[A-Z]-[A-Z]/)),
+    })
+  ),
   query: z.object({
     brackets: z.coerce.number(),
     bracketSize: z.coerce.number(),
@@ -121,6 +126,7 @@ export function getComplexRobs(req: Request, res: Response) {
       .json({ success: false, message: "provide correct query params" });
   }
   const { brackets, bracketSize, maxAge } = result.data.query;
+  const market = result.data.params?.market;
 
   try {
     const allRobs: {
@@ -174,6 +180,87 @@ export function getComplexRobs(req: Request, res: Response) {
       };
     }
     return res.status(200).json(allRobs);
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ success: false, message: "internal server error" });
+  }
+}
+
+const specificComplexRobsSchema = z.object({
+  params: z.object({
+    market: z.string().regex(/[A-Z]-[A-Z]/),
+  }),
+  query: z.object({
+    brackets: z.coerce.number(),
+    bracketSize: z.coerce.number(),
+    maxAge: z.optional(
+      z.coerce
+        .number()
+        .lte(1000 * 60 * 5)
+        .nonnegative()
+    ),
+  }),
+});
+
+export function getSpecificComplexRobs(req: Request, res: Response) {
+  const result = specificComplexRobsSchema.safeParse(req);
+  if (!result.success) {
+    return res
+      .status(400)
+      .json({ success: false, message: "provide correct query params" });
+  }
+  const { brackets, bracketSize, maxAge } = result.data.query;
+  const market = result.data.params?.market;
+
+  try {
+    const marketTrades = trades[market];
+    const marketBook = orderBooks[market];
+
+    if (!marketTrades || !marketBook) {
+      return res
+        .status(404)
+        .json({ success: false, message: "resource not found" });
+    }
+
+    const bids = marketBook.bids;
+    const asks = marketBook.asks;
+
+    const bestBid = Number(bids[0][0]);
+    const bestAsk = Number(asks[0][0]);
+    const bidAskSpread = spread(bestBid, bestAsk);
+
+    const bidDepthArray = orderBookBidBrackets(bids, brackets, bracketSize);
+    const askDepthArray = orderBookAskBrackets(asks, brackets, bracketSize);
+
+    const { sellVolume, buyVolume } = getTradesVolume(
+      marketTrades,
+      maxAge || 1000 * 60
+    );
+
+    let robsBArray: (number | null)[] | null = [];
+    for (const bidBracket of bidDepthArray) {
+      if (sellVolume === 0) {
+        robsBArray = null;
+        break;
+      } else robsBArray.push(bidBracket / sellVolume);
+    }
+    let robsAArray: (number | null)[] | null = [];
+    for (const askBracket of askDepthArray) {
+      if (buyVolume === 0) {
+        robsAArray = null;
+        break;
+      } else robsAArray.push(askBracket / buyVolume);
+    }
+
+    return res.status(200).json({
+      [market]: {
+        robsA: robsAArray,
+        robsB: robsBArray,
+        spread: bidAskSpread,
+      },
+    });
   } catch (err) {
     console.error(err);
     return res
